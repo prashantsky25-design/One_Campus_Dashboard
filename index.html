@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TCET — Campus Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#060a14;--bg2:#0d1526;--bg3:#111d35;
+    --cyan:#00e5ff;--cyan2:#00b4cc;--pink:#ff2d78;--green:#00ff88;--amber:#ffb700;
+    --text:#e0eaff;--muted:#6a7fa8;--border:#1a2d50;
+    --card:#0d1a2e;--card2:#0f1e35;
+  }
+  body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+  .screen{display:none;width:100%;min-height:100vh}
+  .screen.active{display:flex}
+
+  /* ---- LOGIN ---- */
+  #login-screen{align-items:center;justify-content:center;flex-direction:column;background:var(--bg);position:relative;overflow:hidden;min-height:600px}
+  .grid-bg{position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:40px 40px;opacity:.4}
+  .glow-orb{position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none}
+  .orb1{width:400px;height:400px;background:rgba(0,229,255,.07);top:-80px;left:-80px}
+  .orb2{width:300px;height:300px;background:rgba(255,45,120,.06);bottom:-60px;right:-60px}
+  .login-box{position:relative;z-index:2;width:100%;max-width:420px;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:2.5rem 2rem}
+  .login-logo{text-align:center;margin-bottom:1.5rem}
+  .login-logo .brand{font-family:'Orbitron',monospace;font-size:28px;font-weight:900;color:var(--cyan);letter-spacing:4px}
+  .login-logo .sub{font-size:11px;color:var(--muted);letter-spacing:2px;margin-top:4px}
+  .tab-row{display:flex;gap:8px;margin-bottom:1.5rem;background:var(--bg2);border-radius:10px;padding:4px}
+  .tab-btn{flex:1;padding:9px;border:none;background:transparent;color:var(--muted);border-radius:8px;font-family:'Exo 2',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:.2s}
+  .tab-btn.active{background:var(--cyan);color:#000;font-weight:600}
+  .form-group{margin-bottom:1rem}
+  .form-group label{display:block;font-size:12px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;text-transform:uppercase}
+  .form-group input,.form-group select{width:100%;padding:11px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:14px;outline:none;transition:.2s}
+  .form-group input:focus,.form-group select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,229,255,.1)}
+  .form-group select option{background:var(--bg2)}
+  .login-btn{width:100%;padding:13px;background:var(--cyan);border:none;border-radius:10px;color:#000;font-family:'Exo 2',sans-serif;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:1px;transition:.2s;margin-top:.5rem}
+  .login-btn:hover{background:var(--cyan2);transform:translateY(-1px)}
+  .err{color:var(--pink);font-size:12px;margin-top:.5rem;text-align:center;min-height:18px}
+
+  /* ---- LAYOUT ---- */
+  #student-screen,#admin-screen{flex-direction:row}
+  .sidebar{width:220px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+  .sidebar-logo{padding:1.4rem 1.2rem;border-bottom:1px solid var(--border)}
+  .sidebar-logo .brand{font-family:'Orbitron',monospace;font-size:16px;font-weight:900;color:var(--cyan);letter-spacing:3px}
+  .sidebar-logo .sub{font-size:9px;color:var(--muted);letter-spacing:1px;margin-top:2px}
+  .nav-section{padding:.8rem 0}
+  .nav-label{font-size:9px;color:var(--muted);letter-spacing:2px;padding:.3rem 1.2rem;text-transform:uppercase}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 1.2rem;cursor:pointer;color:var(--muted);font-size:13px;font-weight:500;border-left:3px solid transparent;transition:.15s}
+  .nav-item:hover{color:var(--text);background:var(--bg3)}
+  .nav-item.active{color:var(--cyan);background:rgba(0,229,255,.06);border-left-color:var(--cyan)}
+  .nav-item .icon{font-size:16px;width:20px;text-align:center}
+  .sidebar-footer{margin-top:auto;padding:1rem 1.2rem;border-top:1px solid var(--border)}
+  .user-chip{display:flex;align-items:center;gap:8px}
+  .avatar{width:34px;height:34px;border-radius:50%;background:rgba(0,229,255,.15);border:1px solid var(--cyan);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--cyan)}
+  .user-info .name{font-size:13px;font-weight:600;color:var(--text)}
+  .user-info .role{font-size:10px;color:var(--muted)}
+  .logout-btn{width:100%;margin-top:.8rem;padding:7px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Exo 2',sans-serif;font-size:12px;cursor:pointer;transition:.2s}
+  .logout-btn:hover{border-color:var(--pink);color:var(--pink)}
+  .main{flex:1;overflow-y:auto;background:var(--bg)}
+  .page{display:none;padding:1.8rem}
+  .page.active{display:block}
+  .page-title{font-family:'Orbitron',monospace;font-size:20px;font-weight:700;color:var(--text);margin-bottom:.3rem;letter-spacing:2px}
+  .page-sub{font-size:13px;color:var(--muted);margin-bottom:1.5rem}
+
+  /* ---- CARDS ---- */
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:1.5rem}
+  .stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.1rem 1rem}
+  .stat-card .label{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:.5rem}
+  .stat-card .value{font-size:26px;font-weight:700;font-family:'Orbitron',monospace}
+  .stat-card .trend{font-size:11px;color:var(--muted);margin-top:.3rem}
+  .c-cyan{color:var(--cyan)}.c-pink{color:var(--pink)}.c-green{color:var(--green)}.c-amber{color:var(--amber)}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.2rem}
+  .card h3{font-size:14px;font-weight:600;color:var(--text);margin-bottom:1rem;letter-spacing:.5px}
+  .section-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:1.5rem}
+
+  /* HOME hero */
+  .hero{background:linear-gradient(135deg,var(--bg2) 0%,var(--bg3) 100%);border:1px solid var(--border);border-radius:18px;padding:2rem;margin-bottom:1.5rem;position:relative;overflow:hidden}
+  .hero::after{content:'';position:absolute;top:-40px;right:-40px;width:220px;height:220px;background:radial-gradient(circle,rgba(0,229,255,.1) 0%,transparent 70%);pointer-events:none}
+  .hero h2{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;color:var(--cyan);margin-bottom:.5rem;letter-spacing:2px}
+  .hero p{font-size:14px;color:var(--muted);line-height:1.6;max-width:500px}
+  .quick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:1.2rem}
+  .quick-card{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:.9rem;cursor:pointer;transition:.2s;text-align:center}
+  .quick-card:hover{border-color:var(--cyan);background:rgba(0,229,255,.04);transform:translateY(-2px)}
+  .quick-card .qi{font-size:22px;margin-bottom:.4rem}
+  .quick-card .qt{font-size:11px;color:var(--muted);font-weight:500}
+
+  /* HACKATHON */
+  .hack-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.2rem;margin-bottom:12px}
+  .hack-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem}
+  .hack-title{font-size:15px;font-weight:600;color:var(--text)}
+  .badge{font-size:10px;padding:3px 10px;border-radius:20px;font-weight:600;letter-spacing:.5px}
+  .badge-live{background:rgba(0,255,136,.15);color:var(--green);border:1px solid rgba(0,255,136,.3)}
+  .badge-upcoming{background:rgba(255,183,0,.12);color:var(--amber);border:1px solid rgba(255,183,0,.25)}
+  .badge-closed{background:rgba(106,127,168,.1);color:var(--muted);border:1px solid var(--border)}
+  .hack-meta{display:flex;gap:16px;font-size:12px;color:var(--muted);margin-bottom:.8rem;flex-wrap:wrap}
+  .hack-bar{height:4px;background:var(--border);border-radius:2px;margin-bottom:.5rem}
+  .hack-fill{height:100%;border-radius:2px;background:var(--cyan);transition:.4s}
+  .register-btn{padding:6px 16px;background:transparent;border:1px solid var(--cyan);border-radius:8px;color:var(--cyan);font-family:'Exo 2',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:.2s}
+  .register-btn:hover{background:var(--cyan);color:#000}
+
+  /* CLUBS */
+  .club-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+  .club-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.1rem;text-align:center;cursor:pointer;transition:.2s}
+  .club-card:hover{border-color:var(--pink);transform:translateY(-2px)}
+  .club-icon{font-size:28px;margin-bottom:.5rem}
+  .club-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:.3rem}
+  .club-mem{font-size:11px;color:var(--muted)}
+  .join-btn{margin-top:.7rem;padding:5px 14px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Exo 2',sans-serif;font-size:11px;cursor:pointer;transition:.2s}
+  .join-btn:hover{border-color:var(--pink);color:var(--pink)}
+  .join-btn.joined{border-color:var(--green);color:var(--green)}
+
+  /* FEES */
+  .fee-row{display:flex;justify-content:space-between;align-items:center;padding:.9rem 0;border-bottom:1px solid var(--border)}
+  .fee-row:last-child{border-bottom:none}
+  .fee-label{font-size:13px;color:var(--text);font-weight:500}
+  .fee-amt{font-size:14px;font-weight:700;font-family:'Orbitron',monospace}
+  .fee-status{font-size:10px;padding:3px 9px;border-radius:20px}
+  .paid{background:rgba(0,255,136,.1);color:var(--green);border:1px solid rgba(0,255,136,.25)}
+  .due{background:rgba(255,45,120,.1);color:var(--pink);border:1px solid rgba(255,45,120,.25)}
+  .pay-btn{padding:7px 18px;background:var(--cyan);border:none;border-radius:8px;color:#000;font-family:'Exo 2',sans-serif;font-size:12px;font-weight:700;cursor:pointer;margin-top:1rem;transition:.2s}
+  .pay-btn:hover{background:var(--cyan2)}
+
+  /* ID CARD */
+  .id-card{max-width:340px;background:linear-gradient(135deg,#071428 0%,#0f1e35 50%,#071428 100%);border:2px solid var(--cyan);border-radius:18px;padding:0;overflow:hidden;position:relative}
+  .id-header{background:var(--cyan);padding:.7rem 1.2rem;display:flex;align-items:center;justify-content:space-between}
+  .id-header .inst{font-family:'Orbitron',monospace;font-size:13px;font-weight:900;color:#000;letter-spacing:2px}
+  .id-header .tag{font-size:10px;color:rgba(0,0,0,.7);font-weight:600}
+  .id-body{padding:1.2rem;display:flex;gap:1rem;align-items:flex-start}
+  .id-photo{width:80px;height:90px;background:var(--bg3);border:2px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
+  .id-details .id-name{font-family:'Orbitron',monospace;font-size:15px;font-weight:700;color:var(--cyan);margin-bottom:.3rem}
+  .id-row{font-size:11px;color:var(--muted);margin-bottom:.2rem}
+  .id-row span{color:var(--text);font-weight:500}
+  .id-barcode{padding:.8rem 1.2rem;border-top:1px solid var(--border);display:flex;align-items:center;gap:.8rem}
+  .barcode-lines{display:flex;gap:2px;align-items:center}
+  .barcode-lines div{height:30px;background:var(--text);border-radius:1px}
+  .id-num{font-family:'Orbitron',monospace;font-size:11px;color:var(--muted);letter-spacing:2px}
+  .dl-btn{margin-top:1rem;padding:8px 20px;background:transparent;border:1px solid var(--cyan);border-radius:8px;color:var(--cyan);font-family:'Exo 2',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:.2s}
+  .dl-btn:hover{background:var(--cyan);color:#000}
+
+  /* ATTENDANCE student */
+  .att-summary{display:flex;align-items:center;gap:1.5rem;margin-bottom:1.5rem}
+  .att-circle{width:90px;height:90px;border-radius:50%;border:5px solid var(--cyan);display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--card)}
+  .att-pct{font-family:'Orbitron',monospace;font-size:20px;font-weight:900;color:var(--cyan)}
+  .att-lbl{font-size:9px;color:var(--muted);letter-spacing:1px}
+  .att-table{width:100%;border-collapse:collapse;font-size:13px}
+  .att-table th{text-align:left;padding:.6rem .8rem;font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+  .att-table td{padding:.7rem .8rem;border-bottom:1px solid rgba(26,45,80,.5);color:var(--text)}
+  .att-p{color:var(--green)}.att-a{color:var(--pink)}.att-l{color:var(--amber)}
+  .scan-area{background:var(--card);border:2px dashed var(--cyan);border-radius:16px;padding:2rem;text-align:center;margin-top:1rem;cursor:pointer;transition:.2s}
+  .scan-area:hover{background:rgba(0,229,255,.04)}
+  .scan-icon{font-size:48px;margin-bottom:.8rem}
+  .scan-txt{font-size:15px;font-weight:600;color:var(--cyan);margin-bottom:.3rem}
+  .scan-sub{font-size:12px;color:var(--muted)}
+  .scan-success{display:none;background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.3);border-radius:12px;padding:1rem;text-align:center;margin-top:1rem}
+  .scan-success.show{display:block}
+
+  /* QR TEACHER */
+  .qr-controls{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:1.5rem}
+  .qr-controls .form-group{flex:1;min-width:160px;margin-bottom:0}
+  .gen-btn{padding:11px 22px;background:var(--cyan);border:none;border-radius:10px;color:#000;font-family:'Exo 2',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:.2s;white-space:nowrap}
+  .gen-btn:hover{background:var(--cyan2)}
+  .qr-display{text-align:center;padding:1.5rem}
+  .qr-box{width:180px;height:180px;margin:0 auto 1rem;background:white;border-radius:14px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+  .qr-meta{font-size:12px;color:var(--muted);margin-bottom:.3rem}
+  .qr-timer{font-family:'Orbitron',monospace;font-size:28px;font-weight:900;color:var(--cyan);margin-bottom:.5rem}
+  .qr-timer.warn{color:var(--pink)}
+  .qr-label{font-size:11px;color:var(--muted);letter-spacing:1px}
+  .att-list{margin-top:1.2rem}
+  .att-entry{display:flex;align-items:center;gap:10px;padding:.6rem .8rem;background:var(--bg2);border-radius:8px;margin-bottom:6px;animation:slideIn .3s ease}
+  @keyframes slideIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+  .att-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0}
+  .att-name{font-size:13px;color:var(--text);font-weight:500;flex:1}
+  .att-time{font-size:11px;color:var(--muted)}
+
+  /* CONTACT */
+  .contact-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .contact-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.2rem;text-align:center}
+  .contact-icon{font-size:28px;margin-bottom:.6rem}
+  .contact-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:.3rem}
+  .contact-role{font-size:11px;color:var(--muted);margin-bottom:.5rem}
+  .contact-link{font-size:12px;color:var(--cyan);text-decoration:none}
+  .contact-form{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.2rem;margin-top:1.2rem}
+  .contact-form h3{font-size:14px;font-weight:600;margin-bottom:1rem;color:var(--text)}
+  .contact-form textarea{width:100%;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;resize:vertical;min-height:90px;outline:none}
+  .contact-form textarea:focus{border-color:var(--cyan)}
+  .send-btn{margin-top:.8rem;padding:9px 20px;background:var(--cyan);border:none;border-radius:8px;color:#000;font-family:'Exo 2',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:.2s}
+  .send-btn:hover{background:var(--cyan2)}
+
+  /* PAYMENT */
+  .payment-form{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin-bottom:1.5rem}
+  .payment-section{margin-bottom:1.5rem}
+  .payment-section h4{font-size:13px;font-weight:700;color:var(--text);margin-bottom:1rem;letter-spacing:.5px}
+  .payment-methods{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:1rem}
+  .method-btn{padding:12px;border:2px solid var(--border);border-radius:10px;background:transparent;color:var(--muted);font-family:'Exo 2',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:.2s;text-align:center}
+  .method-btn:hover{border-color:var(--cyan);color:var(--text)}
+  .method-btn.active{border-color:var(--cyan);background:rgba(0,229,255,.1);color:var(--cyan)}
+  .card-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem}
+  .card-grid.full{grid-template-columns:1fr}
+  .form-group.full{grid-column:1/-1}
+  .payment-summary{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.2rem;margin-bottom:1.5rem}
+  .summary-row{display:flex;justify-content:space-between;align-items:center;padding:.6rem 0;border-bottom:1px solid rgba(26,45,80,.3);font-size:13px}
+  .summary-row:last-child{border-bottom:none}
+  .summary-total{display:flex;justify-content:space-between;align-items:center;padding:.8rem 0;margin-top:.5rem;border-top:1px solid var(--border);font-size:16px;font-weight:700}
+  .process-btn{width:100%;padding:13px;background:var(--cyan);border:none;border-radius:10px;color:#000;font-family:'Exo 2',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:.2s}
+  .process-btn:hover{background:var(--cyan2);transform:translateY(-1px)}
+  .payment-success{background:rgba(0,255,136,.1);border:2px solid rgba(0,255,136,.3);border-radius:14px;padding:2rem;text-align:center;margin-bottom:1.5rem}
+  .success-icon{font-size:48px;margin-bottom:1rem}
+  .success-msg{font-size:18px;font-weight:700;color:var(--green);margin-bottom:.5rem}
+  .success-details{font-size:12px;color:var(--muted);margin-top:1rem}
+
+  /* ADMIN */
+  .admin-att-table{width:100%;border-collapse:collapse;font-size:13px}
+  .admin-att-table th{text-align:left;padding:.6rem .8rem;font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+  .admin-att-table td{padding:.7rem .8rem;border-bottom:1px solid rgba(26,45,80,.5);color:var(--text)}
+
+  #qr-reader{min-height:300px;position:relative}
+  #qr-reader > *{width:100% !important;height:100% !important}
+  .html5-qrcode-element{width:100% !important}
+  .html5-qrcode{width:100% !important}
+  #html5-qrcode-button-camera-stop,#html5-qrcode-button-camera-start{display:none}
+
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-track{background:var(--bg2)}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen" class="screen active">
+  <div class="grid-bg"></div>
+  <div class="glow-orb orb1"></div>
+  <div class="glow-orb orb2"></div>
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="brand">TCET</div>
+      <div class="sub">THAKUR COLLEGE OF ENGINEERING & TECHNOLOGY</div>
+    </div>
+    <div class="tab-row">
+      <button class="tab-btn active" onclick="setLoginTab('student')">Student</button>
+      <button class="tab-btn" onclick="setLoginTab('admin')">Faculty / Staff</button>
+    </div>
+    <div class="form-group"><label>Student ID / Gsuit Email</label><input id="login-user" type="email" placeholder="e.g. 2021CE0042" required></div>
+    <div class="form-group"><label>Password</label><input id="login-pass" type="password" placeholder="Enter password" required></div>
+    <div id="login-role-wrap" class="form-group" style="display:none"><label>Role</label>
+      <select id="login-role"><option>Faculty</option><option>HOD</option><option>Admin</option></select>
+    </div>
+    <div id="register-role-wrap" class="form-group" style="display:none"><label>Account Type</label>
+      <select id="register-role" onchange="updateRegisterRole()"><option value="student">Student</option><option value="faculty">Faculty</option></select>
+    </div>
+    <div id="register-name-wrap" class="form-group" style="display:none"><label>Full Name</label><input id="register-name" type="text" placeholder="Enter full name"></div>
+    <div id="register-extra-wrap" class="form-group" style="display:none"><label id="register-extra-label">Roll Number</label><input id="register-extra" type="text" placeholder="e.g. 2021CE0042"></div>
+    <div id="register-branch-wrap" class="form-group" style="display:none"><label>Branch</label><select id="register-branch"><option value="CSE">Computer Science & Engineering</option><option value="AIDS">Artificial Intelligence & DS</option><option value="MECH">Mechanical Engineering</option><option value="CIVIL">Civil Engineering</option><option value="EEE">Electrical & Electronics</option></select></div>
+    <div id="register-semester-wrap" class="form-group" style="display:none"><label>Current Semester</label><select id="register-semester"><option value="1">Semester 1</option><option value="2">Semester 2</option><option value="3">Semester 3</option><option value="4">Semester 4</option><option value="5">Semester 5</option><option value="6">Semester 6</option><option value="7">Semester 7</option><option value="8">Semester 8</option></select></div>
+    <div id="register-designation-wrap" class="form-group" style="display:none"><label>Designation</label><select id="register-designation"><option value="Lecturer">Lecturer</option><option value="Assistant Professor">Assistant Professor</option><option value="Associate Professor">Associate Professor</option><option value="Professor">Professor</option><option value="HOD">HOD</option></select></div>
+    <div class="err" id="login-err"></div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">LOGIN</button>
+    <button class="login-btn" id="register-btn" style="display:none" onclick="doRegister()">REGISTER</button>
+    <div style="text-align:center;font-size:12px;color:var(--cyan);margin-top:1rem">
+      <span id="switch-to-register">New user? <a href="#" onclick="setLoginMode('register');return false;">Create account</a></span>
+      <span id="switch-to-login" style="display:none">Already have an account? <a href="#" onclick="setLoginMode('login');return false;">Login</a></span>
+    </div>
+    <div style="text-align:center;font-size:11px;color:var(--muted);margin-top:1rem">Prototype: store users in browser memory ✦</div>
+  </div>
+</div>
+
+<!-- STUDENT DASHBOARD -->
+<div id="student-screen" class="screen">
+  <div class="sidebar">
+    <div class="sidebar-logo"><div class="brand">TCET</div><div class="sub">STUDENT PORTAL</div></div>
+    <div class="nav-section">
+      <div class="nav-label">Main</div>
+      <div class="nav-item active" onclick="showPage('s','home',event)"><span class="icon">⌂</span>Home</div>
+      <div class="nav-item" onclick="showPage('s','hack',event)"><span class="icon">⚡</span>Hackathons</div>
+      <div class="nav-item" onclick="showPage('s','clubs',event)"><span class="icon">◈</span>Clubs & Societies</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Academic</div>
+      <div class="nav-item" onclick="showPage('s','fees',event)"><span class="icon">◎</span>Fees</div>
+      <div class="nav-item" onclick="showPage('s','idcard',event)"><span class="icon">▣</span>ID Card</div>
+      <div class="nav-item" onclick="showPage('s','att',event)"><span class="icon">◉</span>Attendance</div>
+      <div class="nav-item" onclick="showPage('s','qr-scan',event)"><span class="icon">📱</span>Mark Attendance</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Support</div>
+      <div class="nav-item" onclick="showPage('s','contact',event)"><span class="icon">✉</span>Contact Us</div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="avatar" id="user-avatar">RS</div>
+        <div class="user-info"><div class="name" id="user-chip-name">Prashant Yadav</div><div class="role" id="user-chip-role">Artificial Intelligence & Data Science — Sem 1</div></div>
+      </div>
+      <button class="logout-btn" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+  <div class="main">
+    <!-- HOME -->
+    <div class="page active" id="s-home">
+      <div class="hero">
+        <div style="font-size:11px;color:var(--cyan);letter-spacing:2px;margin-bottom:.4rem;font-weight:600">WELCOME BACK</div>
+        <h2>Hello, <span id="user-dashboard-name">Prashant</span>! 👋</h2>
+        <p>Your academic dashboard is live. Track attendance, pay fees, discover hackathons, and connect with your campus community.</p>
+        <div class="quick-grid">
+          <div class="quick-card" onclick="showPage('s','att',event)"><div class="qi">◉</div><div class="qt">Attendance</div></div>
+          <div class="quick-card" onclick="showPage('s','fees',event)"><div class="qi">◎</div><div class="qt">Fees</div></div>
+          <div class="quick-card" onclick="showPage('s','hack',event)"><div class="qi">⚡</div><div class="qt">Hackathons</div></div>
+          <div class="quick-card" onclick="showPage('s','idcard',event)"><div class="qi">▣</div><div class="qt">ID Card</div></div>
+          <div class="quick-card" onclick="showPage('s','clubs',event)"><div class="qi">◈</div><div class="qt">Clubs</div></div>
+          <div class="quick-card" onclick="showPage('s','contact',event)"><div class="qi">✉</div><div class="qt">Contact</div></div>
+        </div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="label">Attendance</div><div class="value c-cyan">84<span style="font-size:16px">%</span></div><div class="trend">↑ 3% from last month</div></div>
+        <div class="stat-card"><div class="label">CGPA</div><div class="value c-green">9.33</div><div class="trend">Sem 1 result</div></div>
+        <div class="stat-card"><div class="label">Dues</div><div class="value c-pink">₹12k</div><div class="trend">Due: 15 Apr 2026</div></div>
+        <div class="stat-card"><div class="label">Events</div><div class="value c-amber">3</div><div class="trend">Registered this sem</div></div>
+      </div>
+      <div class="card">
+        <h3>Upcoming Schedule</h3>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;gap:12px;align-items:center;padding:.6rem .8rem;background:var(--bg2);border-radius:8px">
+            <div style="width:36px;height:36px;background:rgba(0,229,255,.12);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--cyan);font-family:'Orbitron',monospace">MON</div>
+            <div><div style="font-size:13px;font-weight:600">Indian Knowledge System — Lecture 18</div><div style="font-size:11px;color:var(--muted)">9:00 AM · Hall B-302 · Prof. Mehta</div></div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:center;padding:.6rem .8rem;background:var(--bg2);border-radius:8px">
+            <div style="width:36px;height:36px;background:rgba(255,183,0,.1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--amber);font-family:'Orbitron',monospace">TUE</div>
+            <div><div style="font-size:13px;font-weight:600">PS-1 Lab — Session 9</div><div style="font-size:11px;color:var(--muted)">11:00 AM · Lab L-201 · Prof. Sinha</div></div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:center;padding:.6rem .8rem;background:var(--bg2);border-radius:8px">
+            <div style="width:36px;height:36px;background:rgba(255,45,120,.1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--pink);font-family:'Orbitron',monospace">FRI</div>
+            <div><div style="font-size:13px;font-weight:600">IIKS 4 2026 — Deadline</div><div style="font-size:11px;color:var(--muted)">11:59 PM · Online Submission</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HACKATHONS -->
+    <div class="page" id="s-hack">
+      <div class="page-title">Hackathons</div>
+      <div class="page-sub">Discover, register and compete in college & national events</div>
+      <div class="hack-card">
+        <div class="hack-header"><span class="hack-title">Build-it-ON | TCET EWT's |</span><span class="badge badge-live">● LIVE</span></div>
+        <div class="hack-meta"><span>📅 Mar 28 , 2026</span><span>👥 124 / 200 teams</span><span>🏆 ₹10,000</span></div>
+        <div class="hack-bar"><div class="hack-fill" style="width:62%"></div></div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:.8rem">62% spots filled</div>
+        <button class="register-btn">View Details</button>
+      </div>
+      <div class="hack-card">
+        <div class="hack-header"><span class="hack-title">CODESHASTRA XII (DJ Sanghvi College Of Enginnering) </span><span class="badge badge-upcoming">UPCOMING</span></div>
+        <div class="hack-meta"><span>📅 Apr 4,5 2026</span><span>👥 48 / 100 teams</span><span>🏆 ₹1,50,000</span></div>
+        <div class="hack-bar"><div class="hack-fill" style="width:48%"></div></div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:.8rem">48% spots filled</div>
+        <button class="register-btn">Register</button>
+      </div>
+      <div class="hack-card">
+        <div class="hack-header"><span class="hack-title">Hackanova 5.0 |Multicorn 2026|</span><span class="badge badge-closed">CLOSED</span></div>
+        <div class="hack-meta"><span>📅 March 14, 2026</span><span>👥 200 / 200 teams</span><span>🏆 ₹1,40,000</span></div>
+        <div class="hack-bar"><div class="hack-fill" style="width:100%;background:var(--muted)"></div></div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:.8rem">Registration closed</div>
+        <button class="register-btn" style="opacity:.4;cursor:not-allowed">Closed</button>
+      </div>
+    </div>
+
+    <!-- CLUBS -->
+    <div class="page" id="s-clubs">
+      <div class="page-title">Clubs & Societies</div>
+      <div class="page-sub">Join, participate and lead your campus community</div>
+      <div class="club-grid" id="club-grid"></div>
+    </div>
+
+    <!-- FEES -->
+    <div class="page" id="s-fees">
+      <div class="page-title">Fee Portal</div>
+      <div class="page-sub">Semester fee details and payment</div>
+      <div class="card" style="margin-bottom:1rem">
+        <h3>Semester 6 — Fee Breakdown</h3>
+        <div id="fee-rows-container"></div>
+        <div style="border-top:1px solid var(--border);padding-top:.8rem;margin-top:.5rem;display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:13px;color:var(--muted)">Total Outstanding</div>
+          <div id="fee-total-outstanding" style="font-family:'Orbitron',monospace;font-size:20px;font-weight:900;color:var(--pink)">₹8,000</div>
+        </div>
+        <button class="pay-btn" onclick="showPage('s','payment',event)">Pay Now →</button>
+      </div>
+    </div>
+
+    <!-- PAYMENT -->
+    <div class="page" id="s-payment">
+      <div class="page-title">Payment Gateway</div>
+      <div class="page-sub">Secure payment processing for fees</div>
+      <div id="payment-form-section">
+        <div class="payment-summary" id="payment-summary-container">
+          <div style="margin-bottom:1rem"><div style="font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">Payment Details</div></div>
+        </div>
+        <form class="payment-form" onsubmit="processPayment(event)">
+          <div class="payment-section">
+            <h4>Payment Method</h4>
+            <div class="payment-methods">
+              <button type="button" class="method-btn active" onclick="selectPaymentMethod('card',this)">💳 Card</button>
+              <button type="button" class="method-btn" onclick="selectPaymentMethod('upi',this)">₹ UPI</button>
+              <button type="button" class="method-btn" onclick="selectPaymentMethod('netbanking',this)">🏦 Net Banking</button>
+              <button type="button" class="method-btn" onclick="selectPaymentMethod('wallet',this)">💰 Wallet</button>
+            </div>
+          </div>
+          <div id="card-section" class="payment-section">
+            <h4>Card Details</h4>
+            <div class="card-grid">
+              <div class="form-group"><label>Cardholder Name</label><input type="text" placeholder="Full name on card" required></div>
+              <div class="form-group"><label>Card Number</label><input type="text" placeholder="1234 5678 9012 3456" maxlength="19" required></div>
+              <div class="form-group"><label>Expiry Date</label><input type="text" placeholder="MM/YY" maxlength="5" required></div>
+              <div class="form-group"><label>CVV</label><input type="password" placeholder="123" maxlength="4" required></div>
+            </div>
+          </div>
+          <div id="upi-section" class="payment-section" style="display:none">
+            <h4>UPI Details</h4>
+            <div class="form-group full"><label>UPI ID</label><input type="email" placeholder="yourname@upi" required></div>
+          </div>
+          <div id="netbanking-section" class="payment-section" style="display:none">
+            <h4>Select Bank</h4>
+            <div class="form-group full"><label>Bank</label><select required><option value="">Choose your bank...</option><option value="sbi">State Bank of India (SBI)</option><option value="hdfc">HDFC Bank</option><option value="icici">ICICI Bank</option><option value="axis">Axis Bank</option><option value="kotak">Kotak Mahindra Bank</option></select></div>
+          </div>
+          <div id="wallet-section" class="payment-section" style="display:none">
+            <h4>Select Wallet</h4>
+            <div class="payment-methods"><button type="button" class="method-btn" onclick="selectWallet('paytm')" style="width:100%">PayTM</button><button type="button" class="method-btn" onclick="selectWallet('gpay')" style="width:100%">Google Pay</button><button type="button" class="method-btn" onclick="selectWallet('phonepe')" style="width:100%">PhonePe</button></div>
+          </div>
+          <div class="payment-section"><div class="form-group full" style="margin-bottom:0"><label><input type="checkbox" required style="margin-right:6px;cursor:pointer">I agree to the terms and conditions</label></div></div>
+          <button type="submit" class="process-btn">Process Payment</button>
+        </form>
+      </div>
+      <div id="payment-success-section" style="display:none">
+        <div class="payment-success">
+          <div class="success-icon">✓</div>
+          <div class="success-msg">Payment Successful!</div>
+          <div style="font-size:13px;color:var(--text);margin-top:.5rem">Transaction Reference: <span id="txn-ref">TXN2026040512345</span></div>
+          <div class="success-details"><div>Amount: ₹8,000</div><div>Date: <span id="txn-date"></span></div><div>Method: <span id="txn-method"></span></div></div>
+        </div>
+        <div style="display:flex;gap:12px"><button class="register-btn" style="flex:1" onclick="downloadReceipt()">📄 Download Receipt</button><button class="register-btn" style="flex:1" onclick="showPage('s','home',event)">← Back to Home</button></div>
+      </div>
+    </div>
+
+    <!-- ID CARD -->
+    <div class="page" id="s-idcard">
+      <div class="page-title">ID Card</div>
+      <div class="page-sub">Your official TCET identity</div>
+      <div class="id-card">
+        <div class="id-header"><div class="inst">TCET</div><div class="tag">STUDENT ID</div></div>
+        <div class="id-body">
+          <div class="id-photo">👨‍💻</div>
+          <div class="id-details">
+            <div class="id-name">Prashant Yadav</div>
+            <div class="id-row">Branch: <span>Artificial Intelligence & Data Science</span></div>
+            <div class="id-row">Year: <span>First Year (FE)</span></div>
+            <div class="id-row">Roll No: <span>57</span></div>
+            <div class="id-row">Batch: <span>2025 – 2029</span></div>
+            <div class="id-row">Blood Grp: <span>O+</span></div>
+          </div>
+        </div>
+        <div class="id-barcode">
+          <div class="barcode-lines" id="barcode"></div>
+          <div class="id-num">2021CE0042</div>
+        </div>
+      </div>
+      <button class="dl-btn" onclick="this.textContent='Downloaded ✓';setTimeout(()=>this.textContent='Download PDF',1500)">Download PDF</button>
+    </div>
+
+    <!-- ATTENDANCE STUDENT -->
+    <div class="page" id="s-att">
+      <div class="page-title">Attendance</div>
+      <div class="page-sub">Scan QR code in class to mark your presence</div>
+      <div class="att-summary">
+        <div class="att-circle"><div class="att-pct">82%</div><div class="att-lbl">Overall</div></div>
+        <div style="flex:1">
+          <div style="font-size:13px;color:var(--muted);margin-bottom:.4rem">Classes attended: <span style="color:var(--text);font-weight:600">74 / 90</span></div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:.4rem">Min. required: <span style="color:var(--amber);font-weight:600">75%</span></div>
+          <div style="font-size:13px;color:var(--pink)">⚠ 3 more classes needed to reach 75%</div>
+        </div>
+      </div>
+      <div class="scan-area" id="scan-area" onclick="markAttendance()">
+        <div class="scan-icon">⬡</div>
+        <div class="scan-txt">Scan QR Code</div>
+        <div class="scan-sub">Tap to simulate scanning teacher's QR</div>
+      </div>
+      <div class="scan-success" id="scan-success">
+        <div style="font-size:22px;margin-bottom:.4rem">✓</div>
+        <div style="font-size:14px;font-weight:700;color:var(--green)">Attendance Marked!</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:.3rem">Data Structures · Lecture 18 · <span id="scan-time"></span></div>
+      </div>
+      <div class="card" style="margin-top:1.2rem">
+        <h3>Subject-wise Breakdown</h3>
+        <table class="att-table">
+          <thead><tr><th>Subject</th><th>Present</th><th>Absent</th><th>%</th></tr></thead>
+          <tbody>
+            <tr><td>Chemistry</td><td class="att-p">14</td><td class="att-a">2</td><td class="att-p">87%</td></tr>
+            <tr><td>Maths-2</td><td class="att-p">12</td><td class="att-a">4</td><td class="att-l">75%</td></tr>
+            <tr><td>C-Programming (PPS)</td><td class="att-p">10</td><td class="att-a">5</td><td class="att-a">67%</td></tr>
+            <tr><td>Indian Knowledge System (IIKS)</td><td class="att-p">15</td><td class="att-a">1</td><td class="att-p">94%</td></tr>
+            <tr><td>Engineering Mechanics </td><td class="att-p">11</td><td class="att-a">3</td><td class="att-l">79%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- QR SCANNER -->
+    <div class="page" id="s-qr-scan">
+      <div class="page-title">Mark Attendance</div>
+      <div class="page-sub">Scan teacher's QR code to mark yourself present</div>
+      <div class="card" style="margin-bottom:1rem">
+        <div style="display:flex;gap:12px;margin-bottom:1rem">
+          <button class="register-btn" style="flex:1" onclick="startQRScanner()">📱 Start Camera</button>
+          <button class="register-btn" style="flex:1;background:var(--pink)" onclick="stopQRScanner()">⊗ Stop</button>
+        </div>
+        <div id="qr-reader" style="width:100%;display:none;border-radius:10px;overflow:hidden;border:2px solid var(--cyan)"></div>
+        <div id="qr-scanner-status" style="font-size:12px;color:var(--muted);text-align:center;padding:1rem;background:var(--bg2);border-radius:8px;margin:1rem 0">Camera ready. Press "Start Camera" to begin scanning.</div>
+      </div>
+      <div class="card" style="margin-bottom:1rem;padding:1rem;background:linear-gradient(135deg,var(--border),var(--bg3));border-radius:12px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;text-align:center">
+          <div><div style="font-size:20px;font-weight:900;color:var(--green)" id="student-attendance-status">—</div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:.3rem">Your Status</div></div>
+          <div><div style="font-size:20px;font-weight:900;color:var(--cyan)" id="last-marked-time">Never</div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:.3rem">Last Marked</div></div>
+          <div><div style="font-size:20px;font-weight:900;color:var(--amber)" id="today-count">0</div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:.3rem">Today</div></div>
+        </div>
+      </div>
+      <div id="qr-success-message" style="display:none;background:var(--green);color:#000;padding:1rem;border-radius:10px;margin-bottom:1rem;text-align:center;font-weight:600">✓ Attendance marked successfully!</div>
+      <div id="qr-error-message" style="display:none;background:var(--pink);color:#fff;padding:1rem;border-radius:10px;margin-bottom:1rem;text-align:center;font-weight:600"></div>
+      <div class="card">
+        <h3>Scanning Tips</h3>
+        <ul style="list-style:none;padding:0;font-size:13px;color:var(--text);line-height:1.8">
+          <li>✓ Position QR code in the center of the camera view</li>
+          <li>✓ Ensure good lighting for better scanning</li>
+          <li>✓ Hold your device steady while scanning</li>
+          <li>✓ QR code should be clearly visible</li>
+          <li>✓ One scan marks your attendance instantly</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- CONTACT -->
+    <div class="page" id="s-contact">
+      <div class="page-title">Contact Us</div>
+      <div class="page-sub">Get help from the right department</div>
+      <div class="contact-grid">
+        <div class="contact-card"><div class="contact-icon">🎓</div><div class="contact-name">Principle Office</div><div class="contact-role">Exam, results, certificates</div><a class="contact-link" href="#">academics@tcet.ac.in</a></div>
+        <div class="contact-card"><div class="contact-icon">💰</div><div class="contact-name">Finance Dept.</div><div class="contact-role">Fees, scholarships, receipts</div><a class="contact-link" href="#">finance@tcet.ac.in</a></div>
+        <div class="contact-card"><div class="contact-icon">🔧</div><div class="contact-name">Helpdesk</div><div class="contact-role">Portal issues, login support</div><a class="contact-link" href="#">ithelpdesk@tcet.ac.in</a></div>
+        <div class="contact-card"><div class="contact-icon">🏠</div><div class="contact-name">Hostel Office</div><div class="contact-role">Accommodation, mess</div><a class="contact-link" href="#">hostel@tcet.ac.in</a></div>
+        <div class="contact-card"><div class="contact-icon">🏥</div><div class="contact-name">Medical Centre</div><div class="contact-role">Health & wellness</div><a class="contact-link" href="#">medical@tcet.ac.in</a></div>
+        <div class="contact-card"><div class="contact-icon">📞</div><div class="contact-name">Administrative Office</div><div class="contact-role">+91 22 6895 6400</div><a class="contact-link" href="#">info@tcet.ac.in</a></div>
+      </div>
+      <div class="card" style="margin-top:1.5rem">
+        <h3 style="margin-bottom:1rem">Faculty Directory</h3>
+        <div id="faculty-contacts-grid" class="contact-grid"></div>
+      </div>
+      <div class="contact-form">
+        <h3>Send a Message</h3>
+        <div class="form-group"><label>Subject</label><input id="contact-subject" type="text" placeholder="Brief subject"></div>
+        <div class="form-group"><label>Department</label>
+          <select id="contact-dept"><option>Academic Office</option><option>Finance</option><option>IT Helpdesk</option><option>Hostel</option><option>Medical</option></select>
+        </div>
+        <textarea id="contact-body" placeholder="Describe your query in detail..."></textarea>
+        <button id="contact-send-btn" class="send-btn" onclick="sendAdminMessage(this)">Send Message</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN / FACULTY DASHBOARD -->
+<div id="admin-screen" class="screen">
+  <div class="sidebar">
+    <div class="sidebar-logo"><div class="brand">TCET</div><div class="sub">FACULTY PORTAL</div></div>
+    <div class="nav-section">
+      <div class="nav-label">Overview</div>
+      <div class="nav-item active" onclick="showPage('a','dash',event)"><span class="icon">⌂</span>Dashboard</div>
+      <div class="nav-item" onclick="showPage('a','qr',event)"><span class="icon">◈</span>QR Attendance</div>
+      <div class="nav-item" onclick="showPage('a','records',event)"><span class="icon">◉</span>Attendance Records</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Academics</div>
+      <div class="nav-item" onclick="showPage('a','hackathons',event)"><span class="icon">⚡</span>Hackathons</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Management</div>
+      <div class="nav-item" onclick="showPage('a','students',event)"><span class="icon">▣</span>Students</div>
+      <div class="nav-item" onclick="showPage('a','contact',event)"><span class="icon">✉</span>Messages</div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="avatar" id="admin-user-avatar" style="background:rgba(255,45,120,.15);border-color:var(--pink);color:var(--pink)">PM</div>
+        <div class="user-info"><div class="name" id="admin-user-name">Prof. Pooja Mishra</div><div class="role" id="admin-user-role">HOD · Computer Engg.</div></div>
+      </div>
+      <button class="logout-btn" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+  <div class="main">
+    <!-- ADMIN DASHBOARD -->
+    <div class="page active" id="a-dash">
+      <div class="page-title">Faculty Dashboard</div>
+      <div class="page-sub">Real-time overview — Academic Year 2025–26</div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="label">Total Students</div><div class="value c-cyan">847</div><div class="trend">All branches combined</div></div>
+        <div class="stat-card"><div class="label">Avg Attendance</div><div class="value c-green">79%</div><div class="trend">↑ 2% from last week</div></div>
+        <div class="stat-card"><div class="label">Below 75%</div><div class="value c-pink">38</div><div class="trend">Needs intervention</div></div>
+        <div class="stat-card"><div class="label">Sessions Today</div><div class="value c-amber">6</div><div class="trend">3 completed · 3 upcoming</div></div>
+      </div>
+      <div class="section-grid">
+        <div class="card">
+          <h3>Today's Classes</h3>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="padding:.6rem .8rem;background:var(--bg2);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+              <div><div style="font-size:13px;font-weight:600">AI&DS — FE-A</div><div style="font-size:11px;color:var(--muted)">9:00 AM · B-302</div></div>
+              <span class="badge badge-live">Done</span>
+            </div>
+            <div style="padding:.6rem .8rem;background:var(--bg2);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+              <div><div style="font-size:13px;font-weight:600">COMP — FE-A</div><div style="font-size:11px;color:var(--muted)">11:00 AM · B-401</div></div>
+              <span class="badge badge-live">● Live</span>
+            </div>
+            <div style="padding:.6rem .8rem;background:var(--bg2);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+              <div><div style="font-size:13px;font-weight:600">PPS Lab — FE-D</div><div style="font-size:11px;color:var(--muted)">2:00 PM · L-206</div></div>
+              <span class="badge badge-upcoming">Upcoming</span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Pending Actions</h3>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="padding:.6rem .8rem;background:rgba(255,45,120,.07);border:1px solid rgba(255,45,120,.2);border-radius:8px;font-size:13px;color:var(--text)">⚠ 5 leave requests pending approval</div>
+            <div style="padding:.6rem .8rem;background:rgba(255,183,0,.07);border:1px solid rgba(255,183,0,.2);border-radius:8px;font-size:13px;color:var(--text)">📋 Mid-sem marks not uploaded (SE-C)</div>
+            <div style="padding:.6rem .8rem;background:rgba(0,229,255,.07);border:1px solid rgba(0,229,255,.2);border-radius:8px;font-size:13px;color:var(--text)">📣 Circular: Lab schedule updated</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- QR GENERATOR -->
+    <div class="page" id="a-qr">
+      <div class="page-title">QR Attendance</div>
+      <div class="page-sub">Generate dynamic QR codes and track attendance in real-time</div>
+      <div class="card" style="margin-bottom:1rem;padding:1rem;background:var(--border);text-align:center">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem">
+          <div><div style="font-size:24px;font-weight:900;color:var(--cyan)" id="att-stat-total">0</div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Total Students</div></div>
+          <div><div style="font-size:24px;font-weight:900;color:var(--green)" id="att-stat-present">0</div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Present Today</div></div>
+          <div><div style="font-size:24px;font-weight:900;color:var(--pink)" id="att-stat-absent">0</div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Absent</div></div>
+          <div><div style="font-size:24px;font-weight:900;color:var(--amber)" id="att-stat-percent">0%</div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Attendance %</div></div>
+        </div>
+      </div>
+      <div class="qr-controls">
+        <div class="form-group"><label>Subject</label>
+          <select id="qr-subject"><option>Engineering Mechanics</option><option>PPS</option><option>Maths-2</option><option>Indian Knowledge System</option><option>Chemistry</option></select>
+        </div>
+        <div class="form-group"><label>Class</label>
+          <select id="qr-class"><option>FE-AI&DS-D</option><option>SE-COMP-B</option><option>FE-CSE(CS)-C</option><option>TE-A</option><option>TE-B</option></select>
+        </div>
+        <button class="gen-btn" onclick="generateQR()">Generate QR ↗</button>
+        <button class="gen-btn" style="background:var(--green)" onclick="exportAttendance()">📥 Export</button>
+      </div>
+      <div class="card" id="qr-card" style="display:none">
+        <div class="qr-display">
+          <div class="qr-meta" id="qr-meta">Data Structures — SE-A</div>
+          <div class="qr-box" id="qr-box"></div>
+          <div class="qr-label">QR REFRESHES IN</div>
+          <div class="qr-timer" id="qr-timer">5</div>
+          <div class="qr-label">SECONDS</div>
+        </div>
+        <div style="border-top:1px solid var(--border);padding-top:1rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem">
+            <div>
+              <h3>Scanned In</h3>
+              <div style="font-size:11px;color:var(--muted);margin-top:.3rem" id="scan-meta">Session started just now</div>
+            </div>
+            <span style="font-size:12px;color:var(--cyan);font-weight:600" id="scan-count">0 students</span>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:1rem">
+            <input type="text" id="att-search-box" placeholder="Search student name..." style="flex:1;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;outline:none" oninput="filterAttendance()">
+            <button class="register-btn" onclick="markAllPresent()">Mark All ✓</button>
+          </div>
+          <div class="att-list" id="att-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECORDS -->
+    <div class="page" id="a-records">
+      <div class="page-title">Attendance Records</div>
+      <div class="page-sub">Full subject & student breakdown</div>
+      <div class="card">
+        <table class="admin-att-table">
+          <thead><tr><th>Student</th><th>Roll No</th><th>Java Programming (PPS) </th><th>EM</th><th>IIKS</th><th>Maths-2</th><th>Overall</th></tr></thead>
+          <tbody id="records-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- STUDENTS -->
+    <div class="page" id="a-students">
+      <div class="page-title">Student & Faculty Directory</div>
+      <div class="page-sub">Manage enrolled students and faculty members in one place</div>
+      <div class="card" style="margin-bottom:1rem;padding:1rem">
+        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end">
+          <div class="form-group" style="flex:1;min-width:180px"><label>Type</label><select id="dir-type"><option value="student">Student</option><option value="faculty">Faculty</option></select></div>
+          <div class="form-group" style="flex:2;min-width:220px"><label>Name</label><input type="text" id="dir-name" placeholder="Enter full name"></div>
+          <div class="form-group" style="flex:2;min-width:220px"><label>Roll / Department</label><input type="text" id="dir-meta" placeholder="Roll number or department"></div>
+          <button class="login-btn" style="height:42px;margin-top:1.6rem" onclick="addDirectoryEntry()">Add</button>
+        </div>
+      </div>
+      <div class="form-group" style="max-width:320px;margin-bottom:1rem"><label>Search</label><input type="text" placeholder="Name or roll/department..." id="stu-search" oninput="filterStudents()"></div>
+      <div class="card" style="margin-bottom:1rem"><h3 style="margin-bottom:1rem">Students</h3><div id="student-list" style="display:flex;flex-direction:column;gap:8px"></div></div>
+      <div class="card"><h3 style="margin-bottom:1rem">Faculty</h3><div id="faculty-list" style="display:flex;flex-direction:column;gap:8px"></div></div>
+    </div>
+
+    <!-- HACKATHONS MANAGEMENT -->
+    <div class="page" id="a-hackathons">
+      <div class="page-title">Hackathons Management</div>
+      <div class="page-sub">Manage and create hackathon events</div>
+      <div class="card" style="margin-bottom:1rem;padding:1rem">
+        <div style="display:flex;gap:12px;margin-bottom:1rem">
+          <div class="form-group" style="flex:2"><label>Hackathon Name</label><input type="text" id="hack-name" placeholder="e.g. CodeFest 2026"></div>
+          <div class="form-group" style="flex:1"><label>Status</label><select id="hack-status"><option value="upcoming">Upcoming</option><option value="live">Live</option><option value="closed">Closed</option></select></div>
+          <button class="login-btn" style="height:42px;margin-top:1.6rem" onclick="addHackathon()">Add Event</button>
+        </div>
+      </div>
+      <div class="card"><h3 style="margin-bottom:1rem">Hackathon Events</h3><div id="hackathon-list" style="display:flex;flex-direction:column;gap:8px"></div></div>
+    </div>
+
+    <!-- MESSAGES -->
+    <div class="page" id="a-contact">
+      <div class="page-title">Student Messages</div>
+      <div class="page-sub">Incoming queries from students</div>
+      <div style="display:flex;flex-direction:column;gap:10px" id="msg-list"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script>
+let loginMode='login';
+let loginRole='student';
+let currentUser=null;
+let qrInterval=null,qrCountdown=null,scanSim=null;
+const students=[
+  {name:'Prashant Yadav',roll:'2021CE0042',email:'prashant@tcet.com',password:'student123',accountType:'student',branch:'AIDS',semester:'1',ds:87,dbms:94,os:75,cn:67},
+  {name:'Khushi Yadav',roll:'2021CE0091',email:'khushi@tcet.com',password:'student123',accountType:'student',branch:'CSE',semester:'2',ds:92,dbms:88,os:80,cn:85},
+  {name:'Ritesh Yadav',roll:'2021CE0015',email:'ritesh@tcet.com',password:'student123',accountType:'student',branch:'MECH',semester:'3',ds:71,dbms:65,os:70,cn:72},
+  {name:'Jagriti Yadav',roll:'2021CE0067',email:'jagriti@tcet.com',password:'student123',accountType:'student',branch:'CIVIL',semester:'1',ds:95,dbms:91,os:88,cn:90},
+  {name:'Shivansh Tiwari',roll:'2021CE0033',email:'shivansh@tcet.com',password:'student123',accountType:'student',branch:'EEE',semester:'2',ds:60,dbms:58,os:62,cn:55},
+  {name:'Harsh Vishwakarma',roll:'2021CE0078',email:'harsh@tcet.com',password:'student123',accountType:'student',branch:'AIDS',semester:'3',ds:80,dbms:76,os:83,cn:79},
+  {name:'Sadhana Yadav',roll:'2021CE0052',email:'sadhana@tcet.com',password:'student123',accountType:'student',branch:'CSE',semester:'4',ds:74,dbms:82,os:77,cn:68},
+  {name:'Shreya Tiwari',roll:'2021CE0053',email:'shreya@tcet.com',password:'student123',accountType:'student',branch:'MECH',semester:'1',ds:73,dbms:81,os:76,cn:67},
+];
+const faculty=[
+  {name:'Prof. Pooja Mishra',dept:'Computer Engineering',role:'HOD',designation:'HOD',email:'pooja@tcet.com',password:'faculty123',accountType:'faculty'},
+  {name:'Dr. Aman Singh',dept:'Artificial Intelligence & DS',role:'Associate Professor',designation:'Associate Professor',email:'aman@tcet.com',password:'faculty123',accountType:'faculty'},
+  {name:'Dr. Nisha Kapoor',dept:'Mathematics',role:'Assistant Professor',designation:'Assistant Professor',email:'nisha@tcet.com',password:'faculty123',accountType:'faculty'},
+  {name:'Prof. Arjun Desai',dept:'Computer Networks',role:'Faculty',designation:'Lecturer',email:'arjun@tcet.com',password:'faculty123',accountType:'faculty'},
+];
+const clubs=[
+  {icon:'💻',name:'Entreprenure Development & Innovation Cell (EDIC)',members:87,joined:false},
+  {icon:'🤖',name:'TCET Shashtra',members:85,joined:false},
+  {icon:'🎨',name:'Indian Society For Techinical Education (ISTE)',members:60,joined:true},
+  {icon:'📡',name:'IEEE Student Chapter',members:200,joined:false},
+  {icon:'🎭',name:'Cultural Committee',members:150,joined:false},
+  {icon:'📸',name:'TCET Capture',members:75,joined:false},
+  {icon:'🔬',name:'Research Cell',members:45,joined:false},
+  {icon:'♟',name:'Rotract Club',members:95,joined:false},
+];
+const msgs=[
+  {from:'Prashant Yadav',roll:'2021CE0042',dept:'Finance',subj:'Exam fee payment failed',time:'Today 10:32 AM',body:'I tried paying the exam fee but the payment gateway returned an error twice.'},
+  {from:'Harsh Vishwakarma',roll:'2021CE0091',dept:'Academic Office',subj:'Certificate required for internship',time:'Yesterday 4:15 PM',body:'I need my bonafide certificate for my internship letter submission by April 5.'},
+  {from:'Khushi Yadav',roll:'2021CE0033',dept:'TECH Sdupport',subj:'Cannot login to portal',time:'Mar 30 9:00 AM',body:'My portal credentials stopped working after the password reset email.'},
+];
+const scanNames=['Prashant Yadav','Khushi Yadav','Ritesh Yadav','Jagriti Yadav','Harsh Vishwakarma','Shivansh Tiwari','Shreya Tiwari'];
+let hackathons=[
+  {name:'Code Shastra XII',status:'live',teams:48,spots:100},
+  {name:'Build-it-ON TCET',status:'live',teams:124,spots:200},
+  {name:'Hackanova 5.0',status:'closed',teams:200,spots:200},
+];
+let paymentStatus={tuition:true,library:true,exam:false,dev:false};
+
+function setLoginTab(r){
+  loginRole=r;
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',(r==='student'&&i===0)||(r==='admin'&&i===1)));
+  if(loginMode==='login') document.getElementById('login-role-wrap').style.display=r==='admin'?'block':'none';
+}
+function setLoginMode(mode){
+  loginMode=mode;
+  const isRegister=mode==='register';
+  document.getElementById('register-name-wrap').style.display=isRegister?'block':'none';
+  document.getElementById('register-role-wrap').style.display=isRegister?'block':'none';
+  document.getElementById('register-extra-wrap').style.display=isRegister?'block':'none';
+  document.getElementById('register-branch-wrap').style.display='none';
+  document.getElementById('register-semester-wrap').style.display='none';
+  document.getElementById('register-designation-wrap').style.display='none';
+  document.getElementById('login-btn').style.display=isRegister?'none':'block';
+  document.getElementById('register-btn').style.display=isRegister?'block':'none';
+  document.getElementById('switch-to-register').style.display=isRegister?'none':'block';
+  document.getElementById('switch-to-login').style.display=isRegister?'block':'none';
+  document.getElementById('login-err').textContent='';
+  if(isRegister){
+    document.getElementById('login-role-wrap').style.display='none';
+    updateRegisterRole();
+  } else {
+    setLoginTab('student');
+  }
+}
+function updateRegisterRole(){
+  const type=document.getElementById('register-role').value;
+  const label=document.getElementById('register-extra-label');
+  const field=document.getElementById('register-extra');
+  document.getElementById('register-branch-wrap').style.display=type==='student'?'block':'none';
+  document.getElementById('register-semester-wrap').style.display=type==='student'?'block':'none';
+  document.getElementById('register-designation-wrap').style.display=type==='faculty'?'block':'none';
+  if(type==='student'){
+    label.textContent='Roll Number';
+    field.placeholder='e.g. 2021CE0042';
+  } else {
+    label.textContent='Department';
+    field.placeholder='e.g. Computer Engineering';
+  }
+}
+function setUserOnDashboard(user){
+  const firstName=user.name.split(' ')[0]||user.name;
+  document.getElementById('user-dashboard-name').textContent=firstName;
+  document.getElementById('user-chip-name').textContent=user.name;
+  if(user.accountType==='faculty'){
+    document.getElementById('user-chip-role').textContent=`${user.designation} · ${user.dept||'Staff'}`;
+    document.getElementById('admin-user-name').textContent=user.name;
+    document.getElementById('admin-user-role').textContent=`${user.designation} · ${user.dept||'Staff'}`;
+  } else {
+    document.getElementById('user-chip-role').textContent=`${user.branch||'AIDS'} — Sem ${user.semester||'1'}`;
+    document.getElementById('admin-user-name').textContent=user.name;
+    document.getElementById('admin-user-role').textContent=`Student · ${user.branch||'AI & DS'}`;
+  }
+  document.getElementById('user-avatar').textContent=user.name.split(' ').map(x=>x[0]).join('').slice(0,2);
+  document.getElementById('admin-user-avatar').textContent=user.name.split(' ').map(x=>x[0]).join('').slice(0,2);
+}
+function findUser(email,password,role){
+  if(role==='student') return students.find(u=>u.email===email&&u.password===password);
+  return faculty.find(u=>u.email===email&&u.password===password);
+}
+function doLogin(){
+  const u=document.getElementById('login-user').value.trim().toLowerCase();
+  const p=document.getElementById('login-pass').value.trim();
+  if(!u||!p){document.getElementById('login-err').textContent='Please enter credentials.';return;}
+  const user=findUser(u,p,loginRole);
+  if(!user){document.getElementById('login-err').textContent='Invalid email/password or role.';return;}
+  currentUser=user;
+  document.getElementById('login-err').textContent='';
+  document.getElementById('login-screen').classList.remove('active');
+  setUserOnDashboard(user);
+  if(loginRole==='student'){
+    document.getElementById('student-screen').classList.add('active');
+    buildClubs();buildFacultyContacts();buildFees();buildBarcode();
+  } else {
+    document.getElementById('admin-screen').classList.add('active');
+    buildRecords();buildDirectory();buildMsgs();
+  }
+}
+function doRegister(){
+  const name=document.getElementById('register-name').value.trim();
+  const email=document.getElementById('login-user').value.trim().toLowerCase();
+  const pass=document.getElementById('login-pass').value.trim();
+  const type=document.getElementById('register-role').value;
+  const meta=document.getElementById('register-extra').value.trim();
+  if(!name||!email||!pass||!meta){document.getElementById('login-err').textContent='Fill all registration fields.';return;}
+  if(students.some(u=>u.email===email)||faculty.some(u=>u.email===email)){document.getElementById('login-err').textContent='Email already registered.';return;}
+  if(type==='student'){
+    const branch=document.getElementById('register-branch').value;
+    const semester=document.getElementById('register-semester').value;
+    const student={name,roll:meta,email,password:pass,accountType:'student',branch,semester,ds:0,dbms:0,os:0,cn:0};
+    students.push(student);
+    currentUser=student;
+  } else {
+    const designation=document.getElementById('register-designation').value;
+    const prof={name,dept:meta,role:designation,designation,accountType:'faculty',email,password:pass};
+    faculty.push(prof);
+    currentUser=prof;
+  }
+  document.getElementById('login-err').textContent='Registration successful.';
+  setLoginMode('login');
+  document.getElementById('login-screen').classList.remove('active');
+  setUserOnDashboard(currentUser);
+  if(type==='student'){
+    document.getElementById('student-screen').classList.add('active');
+    buildClubs();buildFacultyContacts();buildFees();buildBarcode();
+  } else {
+    document.getElementById('admin-screen').classList.add('active');
+    buildRecords();buildDirectory();buildMsgs();buildHackathons();
+  }
+  document.getElementById('register-name').value='';
+  document.getElementById('register-extra').value='';
+}
+function logout(){
+  stopQR();
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('login-screen').classList.add('active');
+  document.getElementById('login-user').value='';
+  document.getElementById('login-pass').value='';
+  document.getElementById('scan-success').classList.remove('show');
+  setLoginTab('student');
+}
+function showPage(portal,id,e){
+  const pre=portal==='s'?'s-':'a-';
+  document.querySelectorAll('#'+(portal==='s'?'student':'admin')+'-screen .page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(pre+id).classList.add('active');
+  document.querySelectorAll('#'+(portal==='s'?'student':'admin')+'-screen .nav-item').forEach(n=>n.classList.remove('active'));
+  if(e&&e.currentTarget) e.currentTarget.classList.add('active');
+  if(id!=='qr') stopQR();
+}
+function buildBarcode(){
+  const b=document.getElementById('barcode');b.innerHTML='';
+  for(let i=0;i<28;i++){const d=document.createElement('div');d.style.width=(Math.random()>.5?2:1)+'px';d.style.height=(Math.random()>.3?30:20)+'px';b.appendChild(d);}
+}
+function buildClubs(){
+  const g=document.getElementById('club-grid');g.innerHTML='';
+  clubs.forEach((c,i)=>{
+    g.innerHTML+=`<div class="club-card"><div class="club-icon">${c.icon}</div><div class="club-name">${c.name}</div><div class="club-mem">${c.members} members</div><button class="join-btn${c.joined?' joined':''}" onclick="toggleJoin(${i},this)">${c.joined?'Joined ✓':'Join'}</button></div>`;
+  });
+}
+let attendanceSession=[];
+let sessionStartTime=null;
+let qrScannerInstance=null;
+let studentTodayAttendance=[];
+let studentLastMarkedTime=null;
+function toggleJoin(i,btn){clubs[i].joined=!clubs[i].joined;btn.textContent=clubs[i].joined?'Joined ✓':'Join';btn.classList.toggle('joined',clubs[i].joined);}
+function buildFees(){
+  const fees=[
+    {label:'Tuition Fee',amount:45000,key:'tuition'},
+    {label:'Library & Lab Fee',amount:4000,key:'library'},
+    {label:'Examination Fee',amount:5000,key:'exam'},
+    {label:'Development Fund',amount:3000,key:'dev'}
+  ];
+  let totalDue=0;
+  let feeRows='';
+  let summarySummary='<div style="margin-bottom:1rem"><div style="font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">Payment Details</div></div>';
+  fees.forEach(f=>{
+    const isPaid=paymentStatus[f.key];
+    const statusClass=isPaid?'paid':'due';
+    const amountClass=isPaid?'c-green':'c-pink';
+    const statusText=isPaid?'Paid':'Due';
+    feeRows+=`<div class="fee-row"><div><div class="fee-label">${f.label}</div></div><div style="display:flex;align-items:center;gap:12px"><div class="fee-amt ${amountClass}">₹${f.amount.toLocaleString('en-IN')}</div><span class="fee-status ${statusClass}">${statusText}</span></div></div>`;
+    if(!isPaid){
+      summarySummary+=`<div class="summary-row"><span>${f.label} (Due)</span><span class="c-pink">₹${f.amount.toLocaleString('en-IN')}</span></div>`;
+      totalDue+=f.amount;
+    } else {
+      summarySummary+=`<div class="summary-row"><span>${f.label}</span><span>₹${f.amount.toLocaleString('en-IN')}</span></div>`;
+    }
+  });
+  summarySummary+=`<div class="summary-total"><span>Total Amount Due</span><span class="c-${totalDue>0?'pink':'green'}" id="payment-total-due">₹${totalDue.toLocaleString('en-IN')}</span></div>`;
+  document.getElementById('fee-rows-container').innerHTML=feeRows;
+  document.getElementById('fee-total-outstanding').textContent='₹'+totalDue.toLocaleString('en-IN');
+  document.getElementById('payment-summary-container').innerHTML=summarySummary;
+}
+function markAttendance(){
+  const t=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('scan-time').textContent=t;
+  document.getElementById('scan-success').classList.add('show');
+  document.getElementById('scan-area').style.opacity='.4';
+}
+function generateQR(){
+  stopQR();
+  const sub=document.getElementById('qr-subject').value;
+  const cls=document.getElementById('qr-class').value;
+  document.getElementById('qr-meta').textContent=sub+' — '+cls;
+  document.getElementById('qr-card').style.display='block';
+  attendanceSession=[];
+  sessionStartTime=new Date();
+  document.getElementById('att-list').innerHTML='';
+  document.getElementById('scan-count').textContent='0 students';
+  updateAttendanceStats();
+  makeQR();
+  let t=5;
+  document.getElementById('qr-timer').textContent=t;
+  document.getElementById('qr-timer').className='qr-timer';
+  qrCountdown=setInterval(()=>{
+    t--;
+    document.getElementById('qr-timer').textContent=t;
+    if(t<=10) document.getElementById('qr-timer').className='qr-timer warn';
+    if(t<=0){t=5;makeQR();}
+  },1000);
+}
+function updateAttendanceStats(){
+  const totalStudents=students.length;
+  const presentStudents=attendanceSession.length;
+  const absentStudents=totalStudents-presentStudents;
+  const percentage=totalStudents>0?Math.round((presentStudents/totalStudents)*100):0;
+  document.getElementById('att-stat-total').textContent=totalStudents;
+  document.getElementById('att-stat-present').textContent=presentStudents;
+  document.getElementById('att-stat-absent').textContent=absentStudents;
+  document.getElementById('att-stat-percent').textContent=percentage+'%';
+  if(sessionStartTime){
+    const elapsed=Math.floor((new Date()-sessionStartTime)/1000);
+    const mins=Math.floor(elapsed/60);
+    const secs=elapsed%60;
+    document.getElementById('scan-meta').textContent=`Session running for ${mins}m ${secs}s`;
+  }
+}
+function removeFromAttendance(name){
+  attendanceSession=attendanceSession.filter(a=>a.name!==name);
+  updateAttendanceStats();
+  const entries=document.querySelectorAll('.att-entry .att-name');
+  entries.forEach(e=>{if(e.textContent===name) e.parentElement.style.opacity='.4'});
+}
+function markAllPresent(){
+  students.forEach(s=>{
+    if(!attendanceSession.find(a=>a.name===s.name)){
+      attendanceSession.push({name:s.name,time:new Date(),status:'present'});
+    }
+  });
+  updateAttendanceStats();
+  stopQR();
+  document.getElementById('qr-card').style.display='none';
+  alert('All '+students.length+' students marked present. Attendance saved!');
+}
+function filterAttendance(){
+  const query=document.getElementById('att-search-box').value.toLowerCase();
+  document.querySelectorAll('.att-entry').forEach(e=>{
+    const name=e.querySelector('.att-name')?.textContent||'';
+    e.style.display=name.toLowerCase().includes(query)?'flex':'none';
+  });
+}
+function exportAttendance(){
+  if(attendanceSession.length===0){alert('No attendance data to export');return;}
+  const sub=document.getElementById('qr-subject').value;
+  const cls=document.getElementById('qr-class').value;
+  const date=new Date().toLocaleDateString('en-IN');
+  let csv='Name,Status,Time\n';
+  attendanceSession.forEach(a=>{
+    const time=a.time.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    csv+=`${a.name},Present,${time}\n`;
+  });
+  const absentStudents=students.filter(s=>!attendanceSession.find(a=>a.name===s.name));
+  absentStudents.forEach(s=>{csv+=`${s.name},Absent,--\n`;});
+  const blob=new Blob([`Subject: ${sub}\nClass: ${cls}\nDate: ${date}\nTotal Attendance: ${attendanceSession.length}/${students.length}\n\n${csv}`],{type:'text/csv'});
+  const url=window.URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`Attendance_${sub}_${date}.csv`;
+  a.click();
+  alert('Attendance exported successfully!');
+}
+function startQRScanner(){
+  if(qrScannerInstance){updateScannerStatus('Scanner already running');return;}
+  updateScannerStatus('Initializing camera...');
+  const html5QrcodeScanner=new Html5Qrcode('qr-reader');
+  Html5Qrcode.getCameras().then(devices=>{
+    if(devices&&devices.length){
+      const backCamera=devices.find(d=>d.label.toLowerCase().includes('back'))||devices[0];
+      html5QrcodeScanner.start(backCamera.id,{fps:10,qrbox:250,aspectRatio:1},{qrCodeMessage},(errorMessage)=>{console.log('QR Error:',errorMessage);}).then(()=>{
+        qrScannerInstance=html5QrcodeScanner;
+        document.getElementById('qr-reader').style.display='block';
+        updateScannerStatus('🎥 Camera active - position QR code in center');
+      }).catch(err=>{updateScannerStatus('⚠ Camera error: '+err.message);});
+    } else {
+      updateScannerStatus('⚠ No camera found on device');
+    }
+  }).catch(err=>{updateScannerStatus('⚠ Camera access denied: '+err.message);});
+}
+function stopQRScanner(){
+  if(qrScannerInstance){
+    qrScannerInstance.stop().then(()=>{
+      qrScannerInstance=null;
+      document.getElementById('qr-reader').style.display='none';
+      updateScannerStatus('Camera stopped. Press "Start Camera" to resume.');
+    }).catch(err=>{console.log('Error stopping scanner:',err);});
+  }
+}
+function qrCodeMessage(decodedText){
+  try{
+    const parts=decodedText.split('|');
+    if(parts.length<2||parts[0]!=='TCET'){updateScannerError('Invalid QR code format');return;}
+    const subject=parts[1];
+    const timestamp=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    if(studentTodayAttendance.find(a=>a.subject===subject)){
+      updateScannerError('Already marked for '+subject+' today');return;
+    }
+    studentTodayAttendance.push({subject,time:new Date(),timestamp});
+    studentLastMarkedTime=new Date();
+    document.getElementById('student-attendance-status').textContent='✓ Present';
+    document.getElementById('student-attendance-status').style.color='var(--green)';
+    document.getElementById('last-marked-time').textContent=timestamp;
+    document.getElementById('today-count').textContent=studentTodayAttendance.length;
+    showSuccessMessage();
+    stopQRScanner();
+  }catch(err){
+    updateScannerError('Error processing QR: '+err.message);
+  }
+}
+function updateScannerStatus(msg){
+  document.getElementById('qr-scanner-status').textContent=msg;
+  document.getElementById('qr-scanner-status').style.color='var(--muted)';
+}
+function updateScannerError(msg){
+  const errorDiv=document.getElementById('qr-error-message');
+  errorDiv.textContent='✕ '+msg;
+  errorDiv.style.display='block';
+  setTimeout(()=>{errorDiv.style.display='none';},3000);
+}
+function showSuccessMessage(){
+  const successDiv=document.getElementById('qr-success-message');
+  successDiv.style.display='block';
+  updateScannerStatus('📸 Attendance marked! Scan another QR or close camera.');
+  setTimeout(()=>{successDiv.style.display='none';},3000);
+}
+function makeQR(){
+  const box=document.getElementById('qr-box');box.innerHTML='';
+  const sub=document.getElementById('qr-subject').value;
+  const code='TCET|'+sub+'|'+Date.now();
+  try{new QRCode(box,{text:code,width:160,height:160,colorDark:'#000000',colorLight:'#ffffff'});}catch(e){box.innerHTML='<div style="font-size:11px;color:#333;padding:1rem;text-align:center">QR Code<br>'+code.substring(0,20)+'</div>';}
+}
+function stopQR(){if(qrCountdown)clearInterval(qrCountdown);if(scanSim)clearInterval(scanSim);qrCountdown=null;scanSim=null;}
+function buildRecords(){
+  const tb=document.getElementById('records-tbody');tb.innerHTML='';
+  students.forEach(s=>{
+    const avg=Math.round((s.ds+s.dbms+s.os+s.cn)/4);
+    const c=avg>=75?'att-p':avg>=65?'att-l':'att-a';
+    tb.innerHTML+=`<tr><td>${s.name}</td><td style="color:var(--muted)">${s.roll}</td><td class="${s.ds>=75?'att-p':s.ds>=65?'att-l':'att-a'}">${s.ds}%</td><td class="${s.dbms>=75?'att-p':s.dbms>=65?'att-l':'att-a'}">${s.dbms}%</td><td class="${s.os>=75?'att-p':s.os>=65?'att-l':'att-a'}">${s.os}%</td><td class="${s.cn>=75?'att-p':s.cn>=65?'att-l':'att-a'}">${s.cn}%</td><td class="${c}" style="font-weight:700">${avg}%</td></tr>`;
+  });
+}
+function buildDirectory(){
+  buildStudents();
+  buildFaculty();
+}
+function buildStudents(){
+  const sl=document.getElementById('student-list');sl.innerHTML='';
+  students.forEach((s,i)=>{
+    const avg=Math.round((s.ds+s.dbms+s.os+s.cn)/4);
+    sl.innerHTML+=`<div class="att-entry" data-name="${s.name.toLowerCase()}" data-roll="${s.roll}"><div class="avatar" style="flex-shrink:0;width:36px;height:36px;font-size:13px">${s.name.split(' ').map(x=>x[0]).join('')}</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">${s.name}</div><div style="font-size:11px;color:var(--muted)">${s.roll} · Artificial Intelligence & Data Science</div></div><button class="register-btn" style="min-width:78px" onclick="deleteDirectoryEntry('student',${i})">Delete</button></div>`;
+  });
+}
+function buildFaculty(){
+  const fl=document.getElementById('faculty-list');fl.innerHTML='';
+  faculty.forEach((f,i)=>{
+    const desig=f.designation||f.role||'Faculty';
+    fl.innerHTML+=`<div class="att-entry" data-name="${f.name.toLowerCase()}" data-meta="${f.dept.toLowerCase()}"><div class="avatar" style="flex-shrink:0;width:36px;height:36px;font-size:13px">${f.name.split(' ').map(x=>x[0]).join('')}</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">${f.name}</div><div style="font-size:11px;color:var(--muted)">${desig} · ${f.dept}</div></div><button class="register-btn" style="min-width:78px" onclick="deleteDirectoryEntry('faculty',${i})">Delete</button></div>`;
+  });
+}
+function buildFacultyContacts(){
+  const grid=document.getElementById('faculty-contacts-grid');
+  if(!grid) return;
+  grid.innerHTML='';
+  faculty.forEach(f=>{
+    const desig=f.designation||f.role||'Faculty';
+    grid.innerHTML+=`<div class="contact-card"><div class="contact-icon" style="font-size:24px">👨‍🏫</div><div class="contact-name">${f.name}</div><div class="contact-role">${desig}</div><div style="font-size:11px;color:var(--muted);margin-bottom:.5rem">${f.dept}</div><a class="contact-link" href="mailto:${f.email}">${f.email}</a></div>`;
+  });
+}
+function addDirectoryEntry(){
+  const type=document.getElementById('dir-type').value;
+  const name=document.getElementById('dir-name').value.trim();
+  const meta=document.getElementById('dir-meta').value.trim();
+  if(!name){document.getElementById('dir-name').focus();return;}
+  if(type==='student'){
+    students.push({name,roll:meta||'N/A',ds:0,dbms:0,os:0,cn:0});
+    buildRecords();
+  } else {
+    faculty.push({name,dept:meta||'Unknown',role:'Faculty'});
+  }
+  buildDirectory();
+  document.getElementById('dir-name').value='';
+  document.getElementById('dir-meta').value='';
+}
+function deleteDirectoryEntry(type,index){
+  if(type==='student'){
+    students.splice(index,1);
+    buildRecords();
+  } else {
+    faculty.splice(index,1);
+  }
+  buildDirectory();
+}
+function filterStudents(){
+  const q=document.getElementById('stu-search').value.toLowerCase();
+  document.querySelectorAll('#student-list .att-entry, #faculty-list .att-entry').forEach(e=>{
+    const matches=(e.dataset.name.includes(q)||(e.dataset.roll||'').includes(q)||(e.dataset.meta||'').includes(q));
+    e.style.display=matches?'flex':'none';
+  });
+}
+function selectPaymentMethod(method,btn){
+  document.querySelectorAll('.method-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('card-section').style.display=method==='card'?'block':'none';
+  document.getElementById('upi-section').style.display=method==='upi'?'block':'none';
+  document.getElementById('netbanking-section').style.display=method==='netbanking'?'block':'none';
+  document.getElementById('wallet-section').style.display=method==='wallet'?'block':'none';
+}
+function selectWallet(wallet){
+  alert(`Redirecting to ${wallet.toUpperCase()}...`);
+}
+function processPayment(e){
+  e.preventDefault();
+  const formSection=document.getElementById('payment-form-section');
+  const successSection=document.getElementById('payment-success-section');
+  const today=new Date().toLocaleDateString('en-IN');
+  const method=document.querySelector('.method-btn.active').textContent.trim();
+  document.getElementById('txn-date').textContent=today;
+  document.getElementById('txn-method').textContent=method;
+  formSection.style.display='none';
+  successSection.style.display='block';
+}
+function downloadReceipt(){
+  alert('Payment receipt has been downloaded to your device.');
+  paymentStatus={tuition:true,library:true,exam:true,dev:true};
+  buildFees();
+}
+function buildHackathons(){
+  const hl=document.getElementById('hackathon-list');hl.innerHTML='';
+  hackathons.forEach((h,i)=>{
+    const badgeClass='badge-'+h.status;
+    hl.innerHTML+=`<div class="hack-card"><div class="hack-header"><span class="hack-title">${h.name}</span><span class="badge ${badgeClass}">● ${h.status.toUpperCase()}</span></div><div style="font-size:12px;color:var(--muted);margin-bottom:.8rem">👥 ${h.teams}/${h.spots} teams</div><button class="register-btn" style="width:100%" onclick="deleteHackathon(${i})">Remove</button></div>`;
+  });
+}
+function addHackathon(){
+  const name=document.getElementById('hack-name').value.trim();
+  const status=document.getElementById('hack-status').value;
+  if(!name){alert('Enter hackathon name');return;}
+  hackathons.push({name,status,teams:0,spots:100});
+  document.getElementById('hack-name').value='';
+  buildHackathons();
+}
+function deleteHackathon(index){
+  hackathons.splice(index,1);
+  buildHackathons();
+}
+function sendAdminMessage(btn){
+  const subject=document.getElementById('contact-subject').value.trim();
+  const dept=document.getElementById('contact-dept').value;
+  const body=document.getElementById('contact-body').value.trim();
+  if(!subject||!body){
+    alert('Please enter a subject and message before sending.');
+    return;
+  }
+  const time=new Date().toLocaleString('en-IN',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'});
+  const sender=currentUser?currentUser.name:'Guest User';
+  const roll=currentUser?currentUser.roll||'N/A':'N/A';
+  msgs.unshift({from:sender,roll,dept,subj:subject,time,body});
+  buildMsgs();
+  document.getElementById('contact-subject').value='';
+  document.getElementById('contact-body').value='';
+  btn.textContent='Sent ✓';
+  setTimeout(()=>{btn.textContent='Send Message';},2000);
+}
+function buildMsgs(){
+  const ml=document.getElementById('msg-list');ml.innerHTML='';
+  msgs.forEach(m=>{
+    ml.innerHTML+=`<div class="hack-card"><div class="hack-header"><span class="hack-title">${m.subj}</span><span class="badge badge-upcoming">${m.dept}</span></div><div style="font-size:12px;color:var(--muted);margin-bottom:.6rem">${m.from} · ${m.roll} · ${m.time}</div><div style="font-size:13px;color:var(--text);margin-bottom:.8rem">${m.body}</div><button class="register-btn" onclick="this.textContent='Replied ✓';this.style.opacity='.4'">Reply</button></div>`;
+  });
+}
+</script>
+</body>
+</html>
